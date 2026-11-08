@@ -8,6 +8,7 @@ import '../data/repositories/survey_repository.dart';
 import '../domain/services/barometer_service.dart';
 import '../domain/services/export_service.dart';
 import '../domain/services/gnss_service.dart';
+import '../domain/services/solver_service.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase(openDatabaseConnection());
@@ -30,6 +31,8 @@ final barometerServiceProvider = Provider<BarometerService>(
 );
 
 final exportServiceProvider = Provider<ExportService>((ref) => ExportService());
+
+final solverServiceProvider = Provider<SolverService>((ref) => SolverService());
 
 final projectsStreamProvider = StreamProvider.autoDispose<List<Project>>((ref) {
   return ref.watch(projectRepositoryProvider).watchAll();
