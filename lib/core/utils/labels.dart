@@ -13,6 +13,8 @@ String methodLabel(String method) {
   return switch (method) {
     SurveyMethod.gnssBaro => 'GNSS + Barometer',
     SurveyMethod.gnss => 'GNSS',
+    SurveyMethod.trilateration => 'Trilaterasi (Virtual Anchor)',
+    SurveyMethod.networkAdjustment => 'Network Adjustment (3 HP)',
     _ => method,
   };
 }

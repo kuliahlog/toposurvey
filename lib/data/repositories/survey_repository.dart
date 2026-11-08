@@ -36,6 +36,8 @@ class SurveyRepository {
   Future<Session> startSession(
     String projectId, {
     String mode = SessionMode.single,
+    String role = DeviceRole.rover,
+    String deviceName = 'Perangkat lokal',
   }) async {
     final sessionId = _uuid.v4();
     final deviceId = _uuid.v4();
@@ -62,8 +64,8 @@ class SurveyRepository {
               id: deviceId,
               sessionId: sessionId,
               shortId: 1,
-              role: DeviceRole.rover,
-              name: 'Perangkat lokal',
+              role: role,
+              name: deviceName,
             ),
           );
     });
@@ -71,6 +73,71 @@ class SurveyRepository {
     return (await (_db.select(
       _db.sessions,
     )..where((table) => table.id.equals(sessionId))).getSingle());
+  }
+
+  Stream<Session?> watchSession(String sessionId) {
+    return (_db.select(_db.sessions)..where((t) => t.id.equals(sessionId)))
+        .watchSingleOrNull();
+  }
+
+  Future<Session?> getSession(String sessionId) {
+    return (_db.select(_db.sessions)..where((t) => t.id.equals(sessionId)))
+        .getSingleOrNull();
+  }
+
+  Stream<List<Anchor>> watchAnchors(String sessionId) {
+    return (_db.select(_db.anchors)
+          ..where((t) => t.sessionId.equals(sessionId))
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .watch();
+  }
+
+  Future<List<Anchor>> getAnchors(String sessionId) {
+    return (_db.select(_db.anchors)
+          ..where((t) => t.sessionId.equals(sessionId))
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+  }
+
+  Future<Anchor> addAnchor({
+    required String sessionId,
+    required String label,
+    required double lat,
+    required double lon,
+    required double ellipH,
+    double? orthoH,
+    double? accuracyH,
+    double? accuracyV,
+    String source = 'manual',
+    bool isFixed = true,
+  }) async {
+    final anchorId = _uuid.v4();
+    final now = DateTime.now();
+
+    await _db.into(_db.anchors).insert(
+          AnchorsCompanion.insert(
+            id: anchorId,
+            sessionId: sessionId,
+            label: label,
+            lat: lat,
+            lon: lon,
+            ellipH: ellipH,
+            orthoH: Value(orthoH),
+            accuracyH: Value(accuracyH),
+            accuracyV: Value(accuracyV),
+            source: Value(source),
+            isFixed: Value(isFixed),
+            createdAt: now,
+          ),
+        );
+
+    return (await (_db.select(
+      _db.anchors,
+    )..where((t) => t.id.equals(anchorId))).getSingle());
+  }
+
+  Future<void> deleteAnchor(String anchorId) async {
+    await (_db.delete(_db.anchors)..where((t) => t.id.equals(anchorId))).go();
   }
 
   Future<SurveyPoint> addPoint({

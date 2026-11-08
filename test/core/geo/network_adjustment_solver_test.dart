@@ -7,14 +7,6 @@ import 'package:toposurvey/core/geo/network_adjustment_solver.dart';
 void main() {
   group('NetworkAdjustmentSolver', () {
     test('adjusts 3 devices in triangle configuration with exact distances', () {
-      // True positions:
-      // A at (0, 0)
-      // B at (6, 0)
-      // C at (3, 5.196) (Equilateral triangle side 6m)
-      const trueA = EnuPoint(east: 0, north: 0, up: 0);
-      const trueB = EnuPoint(east: 6, north: 0, up: 0);
-      const trueC = EnuPoint(east: 3, north: 5.1961524, up: 0);
-
       // Noisy GNSS priors (error ~2m)
       const gnssA = EnuPoint(east: 0.5, north: -0.8, up: 0);
       const gnssB = EnuPoint(east: 6.8, north: 0.7, up: 0);

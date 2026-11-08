@@ -122,9 +122,9 @@ class TrilaterationSolver {
       }
 
       final W = Matrix.diagonal(weights);
-      final Jt = J.transpose();
-      final N = (Jt * W * J).addDiagonal(lambda);
-      final grad = Jt * W * r;
+      final jt = J.transpose();
+      final N = (jt * W * J).addDiagonal(lambda);
+      final grad = jt * W * r;
 
       final delta = N.solve(grad.scale(-1.0));
       if (delta == null) {
@@ -139,12 +139,12 @@ class TrilaterationSolver {
 
       if (math.sqrt(dEast * dEast + dNorth * dNorth) < tol) {
         converged = true;
-        finalCovariance = (Jt * W * J).addDiagonal(1e-6).inverse();
+        finalCovariance = (jt * W * J).addDiagonal(1e-6).inverse();
         break;
       }
 
       if (iter == maxIterations - 1) {
-        finalCovariance = (Jt * W * J).addDiagonal(1e-6).inverse();
+        finalCovariance = (jt * W * J).addDiagonal(1e-6).inverse();
       }
     }
 

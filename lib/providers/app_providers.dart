@@ -50,6 +50,16 @@ final pointsStreamProvider = StreamProvider.autoDispose
       return ref.watch(surveyRepositoryProvider).watchPoints(projectId);
     });
 
+final sessionProvider = StreamProvider.autoDispose
+    .family<Session?, String>((ref, sessionId) {
+      return ref.watch(surveyRepositoryProvider).watchSession(sessionId);
+    });
+
+final anchorsStreamProvider = StreamProvider.autoDispose
+    .family<List<Anchor>, String>((ref, sessionId) {
+      return ref.watch(surveyRepositoryProvider).watchAnchors(sessionId);
+    });
+
 final livePositionProvider = StreamProvider.autoDispose<Position>((ref) {
   return ref.watch(gnssServiceProvider).watchPosition();
 });

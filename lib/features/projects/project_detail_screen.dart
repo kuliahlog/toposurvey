@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/labels.dart';
 import '../../data/database/app_database.dart';
@@ -18,9 +19,89 @@ class ProjectDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     Project project,
   ) async {
-    final session = await ref
-        .read(surveyRepositoryProvider)
-        .startSession(project.id);
+    var selectedMode = SessionMode.single;
+    var selectedRole = DeviceRole.rover;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Setup Sesi Survey'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Pilih Mode Pengukuran:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    RadioGroup<String>(
+                      groupValue: selectedMode,
+                      onChanged: (v) {
+                        if (v != null) setState(() => selectedMode = v);
+                      },
+                      child: Column(
+                        children: [
+                          RadioListTile<String>(
+                            title: const Text('Single Device (1 HP)'),
+                            subtitle: const Text('GNSS averaging + barometer'),
+                            value: SessionMode.single,
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Virtual Anchor (2 HP)'),
+                            subtitle: const Text('Trilaterasi dengan anchor diketahui'),
+                            value: SessionMode.virtualAnchor,
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Network (3 HP)'),
+                            subtitle: const Text('Joint network adjustment 3 perangkat'),
+                            value: SessionMode.network,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 24),
+                    const Text('Peran Perangkat Ini:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedRole,
+                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: DeviceRole.rover, child: Text('Rover (Pengukur Titik)')),
+                        DropdownMenuItem(value: DeviceRole.anchor, child: Text('Anchor (Titik Acuan)')),
+                        DropdownMenuItem(value: DeviceRole.base, child: Text('Base (Stasiun Tetap)')),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setState(() => selectedRole = v);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Batal'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Mulai'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final session = await ref.read(surveyRepositoryProvider).startSession(
+          project.id,
+          mode: selectedMode,
+          role: selectedRole,
+        );
     if (!context.mounted) return;
     context.push('/project/${project.id}/survey?session=${session.id}');
   }

@@ -30,6 +30,8 @@ class SurveyMethod {
 
   static const gnss = 'gnss';
   static const gnssBaro = 'gnss+baro';
+  static const trilateration = 'trilateration';
+  static const networkAdjustment = 'network_adj';
 }
 
 class QualityFlag {
