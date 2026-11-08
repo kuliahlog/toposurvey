@@ -187,3 +187,4 @@ class Matrix {
     return solve(Matrix.identity(rows));
   }
 }
+

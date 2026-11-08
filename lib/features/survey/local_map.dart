@@ -13,12 +13,16 @@ class LocalSurveyMap extends StatelessWidget {
     required this.project,
     required this.points,
     required this.livePosition,
+    this.anchors = const [],
+    this.anchorRanges,
     this.height = 260,
   });
 
   final Project project;
   final List<SurveyPoint> points;
   final Position? livePosition;
+  final List<Anchor> anchors;
+  final Map<String, double>? anchorRanges;
   final double height;
 
   @override
@@ -73,6 +77,21 @@ class LocalSurveyMap extends StatelessWidget {
       );
     }
 
+    final mappedAnchors = <_MappedAnchor>[];
+    for (final a in anchors) {
+      final enu = Geodesy.toEnu(
+        GeoPoint(latitude: a.lat, longitude: a.lon, height: a.ellipH),
+        origin,
+      );
+      mappedAnchors.add(
+        _MappedAnchor(
+          enu: enu,
+          label: a.label,
+          rangeMeters: anchorRanges?[a.label] ?? anchorRanges?[a.id],
+        ),
+      );
+    }
+
     _MappedLive? live;
     if (livePosition != null) {
       live = _MappedLive(
@@ -96,6 +115,7 @@ class LocalSurveyMap extends StatelessWidget {
         child: CustomPaint(
           painter: _SurveyMapPainter(
             points: mappedPoints,
+            anchors: mappedAnchors,
             live: live,
             colorScheme: theme.colorScheme,
             textTheme: theme.textTheme,
@@ -127,8 +147,27 @@ class LocalSurveyMap extends StatelessWidget {
         height: points.first.orthoH,
       );
     }
+    if (anchors.isNotEmpty) {
+      return GeoPoint(
+        latitude: anchors.first.lat,
+        longitude: anchors.first.lon,
+        height: anchors.first.ellipH,
+      );
+    }
     return null;
   }
+}
+
+class _MappedAnchor {
+  const _MappedAnchor({
+    required this.enu,
+    required this.label,
+    this.rangeMeters,
+  });
+
+  final EnuPoint enu;
+  final String label;
+  final double? rangeMeters;
 }
 
 class _MappedPoint {
@@ -153,12 +192,14 @@ class _MappedLive {
 class _SurveyMapPainter extends CustomPainter {
   _SurveyMapPainter({
     required this.points,
+    required this.anchors,
     required this.live,
     required this.colorScheme,
     required this.textTheme,
   });
 
   final List<_MappedPoint> points;
+  final List<_MappedAnchor> anchors;
   final _MappedLive? live;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -168,8 +209,28 @@ class _SurveyMapPainter extends CustomPainter {
     final background = Paint()..color = colorScheme.surfaceContainerLowest;
     canvas.drawRect(Offset.zero & size, background);
 
-    final allEast = <double>[0, for (final point in points) point.enu.east];
-    final allNorth = <double>[0, for (final point in points) point.enu.north];
+    final allEast = <double>[
+      0,
+      for (final point in points) point.enu.east,
+      for (final a in anchors) ...[
+        a.enu.east,
+        if (a.rangeMeters != null) ...[
+          a.enu.east - a.rangeMeters!,
+          a.enu.east + a.rangeMeters!,
+        ],
+      ],
+    ];
+    final allNorth = <double>[
+      0,
+      for (final point in points) point.enu.north,
+      for (final a in anchors) ...[
+        a.enu.north,
+        if (a.rangeMeters != null) ...[
+          a.enu.north - a.rangeMeters!,
+          a.enu.north + a.rangeMeters!,
+        ],
+      ],
+    ];
     if (live != null) {
       allEast.add(live!.enu.east);
       allNorth.add(live!.enu.north);
@@ -289,6 +350,49 @@ class _SurveyMapPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       )..layout();
       textPainter.paint(canvas, center + const Offset(9, -16));
+    }
+
+    for (final a in anchors) {
+      final center = toCanvas(a.enu);
+      if (a.rangeMeters != null && a.rangeMeters! > 0) {
+        final radiusPx = a.rangeMeters! * scale;
+        canvas.drawCircle(
+          center,
+          radiusPx,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2
+            ..color = Colors.amber.withValues(alpha: 0.6),
+        );
+      }
+
+      const triSize = 8.0;
+      final path = Path()
+        ..moveTo(center.dx, center.dy - triSize)
+        ..lineTo(center.dx - triSize, center.dy + triSize * 0.7)
+        ..lineTo(center.dx + triSize, center.dy + triSize * 0.7)
+        ..close();
+
+      canvas.drawPath(path, Paint()..color = Colors.amber.shade800);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = colorScheme.surface,
+      );
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: a.label,
+          style: textTheme.labelSmall?.copyWith(
+            color: Colors.amber.shade900,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(canvas, center + const Offset(10, -14));
     }
 
     _drawScaleBar(canvas, size, scale, gridStep);
