@@ -43,6 +43,9 @@ area terbuka. Fix lama, duplikat, dan koordinat tidak valid tidak dihitung.
 
 ## Pengembangan
 
+Gunakan **Flutter 3.47.9 / Dart 3.13.7**. CI dan release dipatok ke Flutter
+3.47.9 agar hasil analyzer dan build konsisten dengan lingkungan lokal.
+
 ```sh
 flutter pub get
 flutter analyze
