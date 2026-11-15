@@ -24,9 +24,10 @@ class GnssService {
 
   Stream<Position> watchPosition() {
     return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+      locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 1),
       ),
     );
   }

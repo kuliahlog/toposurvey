@@ -135,25 +135,38 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
             children: [
               TextField(
                 controller: labelCtrl,
-                decoration: const InputDecoration(labelText: 'Label Anchor (misal A1, A2)'),
+                decoration: const InputDecoration(
+                  labelText: 'Label Anchor (misal A1, A2)',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: latCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
                 decoration: const InputDecoration(labelText: 'Latitude'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: lonCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
                 decoration: const InputDecoration(labelText: 'Longitude'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: altCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                decoration: const InputDecoration(labelText: 'Tinggi Elipsoid / Z (m)'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Tinggi Elipsoid / Z (m)',
+                ),
               ),
               if (livePosition != null) ...[
                 const SizedBox(height: 8),
@@ -171,8 +184,14 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Simpan')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Simpan'),
+          ),
         ],
       ),
     );
@@ -183,14 +202,25 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
     final alt = double.tryParse(altCtrl.text.replaceAll(',', '.')) ?? 0.0;
     final label = labelCtrl.text.trim();
 
-    if (lat == null || lon == null || label.isEmpty) {
+    if (lat == null ||
+        lon == null ||
+        !lat.isFinite ||
+        !lon.isFinite ||
+        lat.abs() > 90 ||
+        lon.abs() > 180 ||
+        !alt.isFinite ||
+        label.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Koordinat tidak valid.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Koordinat tidak valid.')));
       }
       return;
     }
 
-    await ref.read(surveyRepositoryProvider).addAnchor(
+    await ref
+        .read(surveyRepositoryProvider)
+        .addAnchor(
           sessionId: widget.sessionId,
           label: label,
           lat: lat,
@@ -201,7 +231,8 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
         );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Anchor $label tersimpan.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Anchor $label tersimpan.')));
     }
   }
 
@@ -212,15 +243,23 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
         title: const Text('Hapus anchor?'),
         content: Text('Anchor ${anchor.label} akan dihapus dari sesi ini.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Hapus')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
     if (confirmed != true) return;
     await ref.read(surveyRepositoryProvider).deleteAnchor(anchor.id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Anchor ${anchor.label} dihapus.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Anchor ${anchor.label} dihapus.')),
+      );
     }
   }
 
@@ -233,7 +272,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
     if (anchors.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Dibutuhkan minimal 3 anchor untuk menghitung trilaterasi.'),
+          content: Text(
+            'Dibutuhkan minimal 3 anchor untuk menghitung trilaterasi.',
+          ),
         ),
       );
       return;
@@ -258,13 +299,19 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
             children: [
               TextField(
                 controller: codeCtrl,
-                decoration: const InputDecoration(labelText: 'Kode Titik Target'),
+                decoration: const InputDecoration(
+                  labelText: 'Kode Titik Target',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: poleCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Tinggi Tongkat (m)'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Tinggi Tongkat (m)',
+                ),
               ),
               const Divider(height: 24),
               const Text(
@@ -277,7 +324,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: TextField(
                     controller: distanceControllers[a.id],
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Jarak ke ${a.label} (meter)',
                       border: const OutlineInputBorder(),
@@ -288,7 +337,10 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           FilledButton.icon(
             onPressed: () => Navigator.pop(context, true),
             icon: const Icon(Icons.calculate),
@@ -304,7 +356,7 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
     for (final a in anchors) {
       final text = distanceControllers[a.id]!.text.trim().replaceAll(',', '.');
       final dist = double.tryParse(text);
-      if (dist == null || dist <= 0) {
+      if (dist == null || !dist.isFinite || dist <= 0) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Jarak ke anchor ${a.label} tidak valid.')),
@@ -314,7 +366,11 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
       }
       obsList.add(
         GeoAnchorObservation(
-          position: GeoPoint(latitude: a.lat, longitude: a.lon, height: a.ellipH),
+          position: GeoPoint(
+            latitude: a.lat,
+            longitude: a.lon,
+            height: a.ellipH,
+          ),
           distance: dist,
           sigma: 0.5,
           anchorId: a.id,
@@ -322,7 +378,18 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
       );
     }
 
-    final poleHeight = double.tryParse(poleCtrl.text.replaceAll(',', '.')) ?? 1.5;
+    final poleHeight =
+        double.tryParse(poleCtrl.text.replaceAll(',', '.')) ?? 1.5;
+    if (!poleHeight.isFinite || poleHeight < 0 || poleHeight > 5) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tinggi tongkat harus antara 0 dan 5 m.'),
+          ),
+        );
+      }
+      return;
+    }
     final origin = GeoPoint(
       latitude: project.originLat ?? anchors.first.lat,
       longitude: project.originLon ?? anchors.first.lon,
@@ -340,7 +407,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
       gnssSigma = livePosition.accuracy;
     }
 
-    final result = ref.read(solverServiceProvider).solveTrilateration(
+    final result = ref
+        .read(solverServiceProvider)
+        .solveTrilateration(
           origin: origin,
           anchors: obsList,
           gnssPrior: gnssPrior,
@@ -348,6 +417,22 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
           poleHeight: poleHeight,
         );
 
+    if (!result.solverResult.converged ||
+        result.solverResult.quality == QualityFlag.poor ||
+        !result.estimatedGeo.latitude.isFinite ||
+        !result.estimatedGeo.longitude.isFinite ||
+        !result.estimatedGeo.height.isFinite) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Solusi belum layak disimpan. Periksa geometri anchor dan jarak pengukuran.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     final draft = PointDraft(
       code: codeCtrl.text.trim().isEmpty ? 'TR-001' : codeCtrl.text.trim(),
       layer: 'tanah',
@@ -365,10 +450,13 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
       stdLon: result.solverResult.horizontalAccuracy / math.sqrt(2),
       stdAlt: result.solverResult.rmsResidual,
       capturedAt: DateTime.now(),
-      description: 'Trilaterasi ${anchors.length} anchor (RMS: ${result.solverResult.rmsResidual.toStringAsFixed(2)}m)',
+      description:
+          'Trilaterasi ${anchors.length} anchor (RMS: ${result.solverResult.rmsResidual.toStringAsFixed(2)}m)',
     );
 
-    await ref.read(surveyRepositoryProvider).addPoint(
+    await ref
+        .read(surveyRepositoryProvider)
+        .addPoint(
           projectId: widget.projectId,
           sessionId: widget.sessionId,
           draft: draft,
@@ -399,10 +487,14 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
         anchors: anchors,
         points: points,
       );
-      await exporter.shareFile(file, subject: 'Sesi ${session.code} - ${project.name}');
+      await exporter.shareFile(
+        file,
+        subject: 'Sesi ${session.code} - ${project.name}',
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal mengekspor sesi: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Gagal mengekspor sesi: $e')));
       }
     }
   }
@@ -422,8 +514,14 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Impor')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Impor'),
+          ),
         ],
       ),
     );
@@ -435,7 +533,11 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
     if (parsed == null || parsed.anchors.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Format JSON tidak valid atau tidak memiliki data anchor.')),
+          const SnackBar(
+            content: Text(
+              'Format JSON tidak valid atau tidak memiliki data anchor.',
+            ),
+          ),
         );
       }
       return;
@@ -443,7 +545,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
 
     var count = 0;
     for (final a in parsed.anchors) {
-      await ref.read(surveyRepositoryProvider).addAnchor(
+      await ref
+          .read(surveyRepositoryProvider)
+          .addAnchor(
             sessionId: widget.sessionId,
             label: a.label,
             lat: a.lat,
@@ -458,7 +562,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Berhasil mengimpor $count anchor dari HP lain.')),
+        SnackBar(
+          content: Text('Berhasil mengimpor $count anchor dari HP lain.'),
+        ),
       );
     }
   }
@@ -515,6 +621,12 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                   value: Formatters.meters(point.accuracyV),
                 ),
                 InfoRow(label: 'Metode', value: methodLabel(point.method)),
+                InfoRow(
+                  label: 'Datum tinggi',
+                  value: point.method == SurveyMethod.gnssBaro
+                      ? 'Benchmark'
+                      : 'Elipsoid GNSS',
+                ),
                 InfoRow(
                   label: 'Tinggi tongkat',
                   value: Formatters.meters(point.poleHeight, decimals: 2),
@@ -657,7 +769,8 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                 barometerError: baroAsync.hasError,
                 relativeHeight: relativeHeight,
               ),
-              if (session != null && session.mode == SessionMode.virtualAnchor) ...[
+              if (session != null &&
+                  session.mode == SessionMode.virtualAnchor) ...[
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
@@ -687,7 +800,8 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                           children: [
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: () => _addAnchor(project, anchors, position),
+                                onPressed: () =>
+                                    _addAnchor(project, anchors, position),
                                 icon: const Icon(Icons.add),
                                 label: const Text('Tambah Anchor'),
                               ),
@@ -697,11 +811,11 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                               child: FilledButton.icon(
                                 onPressed: anchors.length >= 3
                                     ? () => _calculateTrilateration(
-                                          project,
-                                          anchors,
-                                          points,
-                                          position,
-                                        )
+                                        project,
+                                        anchors,
+                                        points,
+                                        position,
+                                      )
                                     : null,
                                 icon: const Icon(Icons.calculate),
                                 label: const Text('Trilaterasi'),
@@ -718,15 +832,27 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                               leading: const CircleAvatar(
                                 radius: 12,
                                 backgroundColor: Colors.amber,
-                                child: Icon(Icons.flag, size: 14, color: Colors.black87),
+                                child: Icon(
+                                  Icons.flag,
+                                  size: 14,
+                                  color: Colors.black87,
+                                ),
                               ),
-                              title: Text(a.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              title: Text(
+                                a.label,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               subtitle: Text(
                                 '${Formatters.latitude(a.lat)}, ${Formatters.longitude(a.lon)} • '
                                 '${Formatters.meters(a.ellipH, decimals: 1)}',
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline, size: 18),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                ),
                                 onPressed: () => _deleteAnchor(a),
                               ),
                             ),

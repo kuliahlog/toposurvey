@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/utils/formatters.dart';
+import '../../core/constants/app_constants.dart';
 import '../../data/database/app_database.dart';
 
 class ImportAnchorData {
@@ -46,6 +47,9 @@ class ImportSessionData {
 }
 
 class ExportService {
+  static String heightReference(SurveyPoint point) =>
+      point.method == SurveyMethod.gnssBaro ? 'benchmark' : 'ellipsoidal';
+
   Future<File> exportCsv({
     required Project project,
     required List<SurveyPoint> points,
@@ -57,7 +61,8 @@ class ExportService {
         'description',
         'latitude',
         'longitude',
-        'orthometric_height_m',
+        'height_m',
+        'height_reference',
         'accuracy_h_m',
         'accuracy_v_m',
         'method',
@@ -73,6 +78,7 @@ class ExportService {
           point.lat.toStringAsFixed(7),
           point.lon.toStringAsFixed(7),
           point.orthoH.toStringAsFixed(3),
+          heightReference(point),
           point.accuracyH.toStringAsFixed(2),
           point.accuracyV?.toStringAsFixed(2) ?? '',
           point.method,
@@ -99,10 +105,16 @@ class ExportService {
             'type': 'Feature',
             'geometry': {
               'type': 'Point',
-              'coordinates': [point.lon, point.lat, point.orthoH],
+              'coordinates': [
+                point.lon,
+                point.lat,
+                if (point.method != SurveyMethod.gnssBaro) point.orthoH,
+              ],
             },
             'properties': {
               'code': point.code,
+              'height_m': point.orthoH,
+              'height_reference': heightReference(point),
               'layer': point.layer,
               'description': point.description,
               'accuracy_h_m': point.accuracyH,
@@ -180,6 +192,7 @@ class ExportService {
             'lat': p.lat,
             'lon': p.lon,
             'orthoH': p.orthoH,
+            'height_reference': heightReference(p),
             'accuracyH': p.accuracyH,
             'method': p.method,
             'quality': p.quality,

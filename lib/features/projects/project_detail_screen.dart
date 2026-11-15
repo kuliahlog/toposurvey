@@ -34,7 +34,10 @@ class ProjectDetailScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Pilih Mode Pengukuran:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Pilih Mode Pengukuran:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     RadioGroup<String>(
                       groupValue: selectedMode,
@@ -50,27 +53,48 @@ class ProjectDetailScreen extends ConsumerWidget {
                           ),
                           RadioListTile<String>(
                             title: const Text('Virtual Anchor (2 HP)'),
-                            subtitle: const Text('Trilaterasi dengan anchor diketahui'),
+                            subtitle: const Text(
+                              'Input koordinat dan jarak anchor secara manual',
+                            ),
                             value: SessionMode.virtualAnchor,
                           ),
                           RadioListTile<String>(
-                            title: const Text('Network (3 HP)'),
-                            subtitle: const Text('Joint network adjustment 3 perangkat'),
+                            title: const Text(
+                              'Network (3 HP) — belum tersedia',
+                            ),
+                            subtitle: const Text(
+                              'Menunggu integrasi BLE antarperangkat',
+                            ),
+                            enabled: false,
                             value: SessionMode.network,
                           ),
                         ],
                       ),
                     ),
                     const Divider(height: 24),
-                    const Text('Peran Perangkat Ini:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Peran Perangkat Ini:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: selectedRole,
-                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
                       items: const [
-                        DropdownMenuItem(value: DeviceRole.rover, child: Text('Rover (Pengukur Titik)')),
-                        DropdownMenuItem(value: DeviceRole.anchor, child: Text('Anchor (Titik Acuan)')),
-                        DropdownMenuItem(value: DeviceRole.base, child: Text('Base (Stasiun Tetap)')),
+                        DropdownMenuItem(
+                          value: DeviceRole.rover,
+                          child: Text('Rover (Pengukur Titik)'),
+                        ),
+                        DropdownMenuItem(
+                          value: DeviceRole.anchor,
+                          child: Text('Anchor (Titik Acuan)'),
+                        ),
+                        DropdownMenuItem(
+                          value: DeviceRole.base,
+                          child: Text('Base (Stasiun Tetap)'),
+                        ),
                       ],
                       onChanged: (v) {
                         if (v != null) setState(() => selectedRole = v);
@@ -97,11 +121,9 @@ class ProjectDetailScreen extends ConsumerWidget {
 
     if (confirmed != true) return;
 
-    final session = await ref.read(surveyRepositoryProvider).startSession(
-          project.id,
-          mode: selectedMode,
-          role: selectedRole,
-        );
+    final session = await ref
+        .read(surveyRepositoryProvider)
+        .startSession(project.id, mode: selectedMode, role: selectedRole);
     if (!context.mounted) return;
     context.push('/project/${project.id}/survey?session=${session.id}');
   }

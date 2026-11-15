@@ -73,6 +73,12 @@ class GnssAverager {
 
   void add(GnssSample sample) {
     if (!sample.latitude.isFinite || !sample.longitude.isFinite) return;
+    if (sample.latitude.abs() > 90 || sample.longitude.abs() > 180) return;
+    if (sample.hasAltitude && !sample.altitude.isFinite) return;
+    if (_samples.isNotEmpty &&
+        !sample.timestamp.isAfter(_samples.last.timestamp)) {
+      return;
+    }
     if (!sample.accuracyH.isFinite || sample.accuracyH <= 0) return;
     if (sample.accuracyH > AppConstants.maxGnssAccuracyMeters) return;
 

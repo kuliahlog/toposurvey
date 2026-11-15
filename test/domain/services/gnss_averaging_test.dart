@@ -39,6 +39,22 @@ void main() {
       expect(averager.summarize(), isNull);
     });
 
+    test('rejects coordinates outside WGS84 and nonfinite heights', () {
+      final averager = GnssAverager()
+        ..add(sample(latitude: 91))
+        ..add(sample(longitude: 181))
+        ..add(sample(altitude: double.nan));
+      expect(averager.sampleCount, 0);
+    });
+
+    test('does not count repeated or older fixes as fresh samples', () {
+      final averager = GnssAverager()
+        ..add(sample(seconds: 2))
+        ..add(sample(seconds: 2))
+        ..add(sample(seconds: 1));
+      expect(averager.sampleCount, 1);
+    });
+
     test('averages position and altitude for a good fix', () {
       final averager = GnssAverager();
       for (var i = 0; i < AppConstants.recommendedSamples; i++) {

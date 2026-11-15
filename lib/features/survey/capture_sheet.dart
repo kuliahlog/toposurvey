@@ -90,6 +90,9 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     _baroSubscription = ref.listenManual(
       barometerProvider,
       (previous, next) {
+        if (next.hasError && mounted) {
+          setState(() => _barometerError = true);
+        }
         final reading = next.value;
         if (reading != null) _handleBarometer(reading);
       },
@@ -119,7 +122,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     setState(() {
       _lastPosition = position;
       if (_capturing) {
-        final now = DateTime.now();
+        final now = position.timestamp;
         if (_lastSampleAt == null ||
             now.difference(_lastSampleAt!) >=
                 const Duration(milliseconds: 900)) {
@@ -131,7 +134,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
               altitude: position.altitude,
               accuracyH: position.accuracy,
               accuracyV: position.altitudeAccuracy,
-              timestamp: now,
+              timestamp: position.timestamp,
               hasAltitude: position.hasAltitude,
             ),
           );
@@ -150,9 +153,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   }
 
   void _startCapture() {
-    if (_lastPosition == null) {
+    if (_lastPosition == null ||
+        DateTime.now().difference(_lastPosition!.timestamp) >
+            const Duration(seconds: 10)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Menunggu posisi GNSS pertama.')),
+        const SnackBar(
+          content: Text(
+            'Menunggu posisi GNSS baru. Pastikan GPS aktif dan berada di area terbuka.',
+          ),
+        ),
       );
       return;
     }
@@ -165,7 +174,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
         _captureBasePressureHpa;
     _result = null;
     _elapsedSeconds = 0;
-    _lastSampleAt = null;
+    _lastSampleAt = _lastPosition!.timestamp;
     _capturing = true;
 
     final position = _lastPosition!;
@@ -176,7 +185,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
         altitude: position.altitude,
         accuracyH: position.accuracy,
         accuracyV: position.altitudeAccuracy,
-        timestamp: DateTime.now(),
+        timestamp: position.timestamp,
         hasAltitude: position.hasAltitude,
       ),
     );
@@ -187,7 +196,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
         return;
       }
       setState(() => _elapsedSeconds++);
-      if (_elapsedSeconds >= AppConstants.captureDuration.inSeconds) {
+      final summary = _averager.summarize();
+      if ((_elapsedSeconds >= AppConstants.captureDuration.inSeconds &&
+              summary != null &&
+              summary.sampleCount >= AppConstants.minSamples) ||
+          _elapsedSeconds >= 120) {
         _stopCapture();
       }
     });
@@ -245,7 +258,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     final poleHeight = double.tryParse(
       _poleController.text.trim().replaceAll(',', '.'),
     );
-    if (poleHeight == null || poleHeight <= 0 || poleHeight > 5) {
+    if (poleHeight == null ||
+        !poleHeight.isFinite ||
+        poleHeight <= 0 ||
+        poleHeight > 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tinggi tongkat harus antara 0 dan 5 m.')),
       );
@@ -328,8 +344,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = (_elapsedSeconds / AppConstants.captureDuration.inSeconds)
-        .clamp(0.0, 1.0);
+    final targetSeconds =
+        _elapsedSeconds >= AppConstants.captureDuration.inSeconds && _capturing
+        ? 120
+        : AppConstants.captureDuration.inSeconds;
+    final progress = (_elapsedSeconds / targetSeconds).clamp(0.0, 1.0);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -368,7 +387,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                   Text(
                     _capturing
                         ? 'Merekam ${Formatters.seconds(_elapsedSeconds)} / '
-                              '${Formatters.seconds(AppConstants.captureDuration.inSeconds)}'
+                              '${Formatters.seconds(targetSeconds)}'
                         : _result != null
                         ? 'Sampling selesai'
                         : 'Siap memulai sampling',
@@ -381,6 +400,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                     ),
                 ],
               ),
+              if (_capturing && _elapsedSeconds >= 60)
+                const Text(
+                  'Sampel masih kurang. Sampling dilanjutkan hingga maksimal 120 detik.',
+                ),
               if (_result != null) ...[
                 const SizedBox(height: 12),
                 _ResultCard(result: _result!),
@@ -406,6 +429,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tinggi GNSS memakai datum elipsoid. Tinggi benchmark dipakai setelah kalibrasi barometer.',
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -455,7 +482,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                   final parsed = double.tryParse(
                     (value ?? '').trim().replaceAll(',', '.'),
                   );
-                  if (parsed == null || parsed <= 0 || parsed > 5) {
+                  if (parsed == null ||
+                      !parsed.isFinite ||
+                      parsed <= 0 ||
+                      parsed > 5) {
                     return 'Isi 0.1–5.0 m';
                   }
                   return null;
@@ -479,7 +509,12 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
               if (_result != null) ...[
                 const SizedBox(height: 8),
                 FilledButton.icon(
-                  onPressed: _saving || _heightWarning != null ? null : _save,
+                  onPressed:
+                      _saving ||
+                          _heightWarning != null ||
+                          _result!.sampleCount < AppConstants.minSamples
+                      ? null
+                      : _save,
                   icon: _saving
                       ? const SizedBox(
                           width: 18,
